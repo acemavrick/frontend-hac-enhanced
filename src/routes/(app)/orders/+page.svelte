@@ -2,6 +2,7 @@
 	import type { PageData } from './$types';
 	import OrderCard from '$lib/components/orders/OrderCard.svelte';
 	import NewScrapeButton from '$lib/components/orders/NewScrapeButton.svelte';
+	import OrderCompare from '$lib/components/orders/OrderCompare.svelte';
 
 	let { data }: { data: PageData } = $props();
 </script>
@@ -31,5 +32,10 @@
 				<OrderCard {order} />
 			{/each}
 		{/if}
+	</div>
+
+	<!-- comparison tool — only shows if 2+ completed orders -->
+	<div class="mt-8">
+		<OrderCompare orders={data.orders} />
 	</div>
 </div>
