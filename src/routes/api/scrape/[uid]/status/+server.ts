@@ -2,7 +2,7 @@ import { json, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { scrapeOrders } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
-import { getStatus } from '$lib/server/scraper/client';
+import { getStatus, isTerminal, isSuccess } from '$lib/server/scraper/client';
 import type { RequestHandler } from './$types';
 
 // GET /api/scrape/[uid]/status — poll status for an order
@@ -17,26 +17,45 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 
 	if (!order) error(404, 'Order not found');
 
-	// if already completed/failed locally, return cached status
-	if (order.status === 'done' || order.status === 'error') {
-		return json({ status: order.status, progress: order.status === 'done' ? 1 : order.progress });
+	// if already terminal locally, return cached status
+	if (order.status === 'complete' || order.status === 'partial' || order.status === 'failed' || order.status === 'failed_auth' || order.status === 'timed_out') {
+		return json({
+			status: order.status,
+			progress: isSuccess(order.status) ? 1 : order.progress,
+			error: order.error
+		});
 	}
 
-	// poll the scraper
+	// poll the scraper for live status
 	try {
 		const result = await getStatus(order.scraperUid);
 
-		if (result.status === 'done') {
-			await db.update(scrapeOrders).set({ status: 'done', progress: 1 }).where(eq(scrapeOrders.id, order.id));
+		// sync scraper status to our DB
+		if (isTerminal(result.status)) {
+			await db.update(scrapeOrders).set({
+				status: result.status,
+				progress: result.progress,
+				error: result.error
+			}).where(eq(scrapeOrders.id, order.id));
+		} else {
+			// just update progress for in-flight statuses
+			await db.update(scrapeOrders).set({
+				status: result.status,
+				progress: result.progress
+			}).where(eq(scrapeOrders.id, order.id));
 		}
 
-		return json({ status: result.status, progress: result.status === 'done' ? 1 : 0.5 });
+		return json({
+			status: result.status,
+			progress: result.progress,
+			error: result.error
+		});
 	} catch (e) {
 		const msg = e instanceof Error ? e.message : 'Unknown error';
-		await db
-			.update(scrapeOrders)
-			.set({ status: 'error', error: msg })
-			.where(eq(scrapeOrders.id, order.id));
-		return json({ status: 'error', error: msg });
+		await db.update(scrapeOrders).set({
+			status: 'failed',
+			error: msg
+		}).where(eq(scrapeOrders.id, order.id));
+		return json({ status: 'failed', error: msg, progress: 0 });
 	}
 };

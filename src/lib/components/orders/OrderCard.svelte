@@ -11,12 +11,18 @@
 
 	let { order }: { order: Order } = $props();
 
-	const statusColors: Record<string, string> = {
-		done: 'bg-green-100 text-green-700',
-		error: 'bg-red-100 text-red-700',
-		processing: 'bg-yellow-100 text-yellow-700',
-		pending: 'bg-gray-100 text-gray-700'
-	};
+	const FAILED = new Set(['failed', 'failed_auth', 'timed_out', 'canceled']);
+	const SUCCESS = new Set(['complete', 'partial']);
+
+	function statusStyle(s: string): string {
+		if (SUCCESS.has(s)) return 'bg-green-100 text-green-700';
+		if (FAILED.has(s)) return 'bg-red-100 text-red-700';
+		return 'bg-yellow-100 text-yellow-700'; // any in-flight state
+	}
+
+	function isInFlight(s: string): boolean {
+		return !SUCCESS.has(s) && !FAILED.has(s);
+	}
 
 	function timeAgo(ts: number): string {
 		const diff = Date.now() - ts;
@@ -36,15 +42,15 @@
 >
 	<div class="flex items-center justify-between">
 		<div class="flex items-center gap-3">
-			<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {statusColors[order.status] ?? statusColors.pending}">
-				{order.status}
+			<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {statusStyle(order.status)}">
+				{order.status.replace('_', ' ')}
 			</span>
 			<span class="text-sm text-gray-500">{order.tasks.join(', ')}</span>
 		</div>
 		<span class="text-xs text-gray-400">{timeAgo(order.createdAt)}</span>
 	</div>
 
-	{#if order.status === 'processing'}
+	{#if isInFlight(order.status)}
 		<div class="mt-3 h-1.5 overflow-hidden rounded-full bg-gray-100">
 			<div
 				class="h-full rounded-full bg-brand-500 transition-all duration-500"

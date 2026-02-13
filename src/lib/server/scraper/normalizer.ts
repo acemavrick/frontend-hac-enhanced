@@ -64,7 +64,7 @@ export async function normalizeAttendance(
 	const records: ParsedRecord[] = [];
 
 	// iterate month keys (e.g. "January 2026", "February 2026")
-	for (const [monthKey, entries] of Object.entries(rawAttendance)) {
+	for (const [, entries] of Object.entries(rawAttendance)) {
 		if (!Array.isArray(entries)) continue;
 
 		for (const entry of entries) {

@@ -5,6 +5,19 @@
 	let { data }: { data: PageData } = $props();
 	const o = $derived(data.order);
 
+	const FAILED = new Set(['failed', 'failed_auth', 'timed_out', 'canceled']);
+	const SUCCESS = new Set(['complete', 'partial']);
+
+	function isInFlight(s: string) {
+		return !FAILED.has(s) && !SUCCESS.has(s);
+	}
+
+	function statusStyle(s: string): string {
+		if (SUCCESS.has(s)) return 'bg-green-100 text-green-700';
+		if (FAILED.has(s)) return 'bg-red-100 text-red-700';
+		return 'bg-yellow-100 text-yellow-700';
+	}
+
 	function fmtDate(ts: number) {
 		return new Date(ts).toLocaleString();
 	}
@@ -26,15 +39,12 @@
 				<h1 class="text-xl font-bold text-gray-900">Order Detail</h1>
 				<p class="mt-1 font-mono text-xs text-gray-400">{o.id}</p>
 			</div>
-			<span
-				class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
-				{o.status === 'done' ? 'bg-green-100 text-green-700' : o.status === 'error' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}"
-			>
-				{o.status}
+			<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {statusStyle(o.status)}">
+				{o.status.replace('_', ' ')}
 			</span>
 		</div>
 
-		{#if o.status === 'processing'}
+		{#if isInFlight(o.status)}
 			<div class="mt-6">
 				<OrderProgress orderId={o.id} initialProgress={o.progress} />
 			</div>
@@ -55,7 +65,7 @@
 					<dd class="font-medium text-gray-900">{fmtDate(o.completedAt)}</dd>
 				</div>
 			{/if}
-			{#if o.status === 'done'}
+			{#if SUCCESS.has(o.status)}
 				<div class="flex justify-between">
 					<dt class="text-gray-500">Attendance records</dt>
 					<dd class="font-medium text-gray-900">{o.attendanceCount}</dd>

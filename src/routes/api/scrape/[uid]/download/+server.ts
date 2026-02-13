@@ -25,38 +25,41 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 	try {
 		const raw = await downloadResult(user.hacUsername, order.scraperUid);
 
-		// store raw response
+		// store raw response and mark complete
 		await db
 			.update(scrapeOrders)
 			.set({
 				rawResponse: JSON.stringify(raw),
-				status: 'done',
+				status: 'complete',
 				progress: 1,
 				completedAt: new Date()
 			})
 			.where(eq(scrapeOrders.id, order.id));
 
-		// normalize attendance data if present
+		// scraper output shape: { username, status, tasks: { attendance: {...}, ... } }
 		let attendanceCount = 0;
 		const data = raw as Record<string, unknown>;
-		if (data.attendance && typeof data.attendance === 'object') {
+		const tasks = data.tasks as Record<string, unknown> | undefined;
+
+		// check both possible locations for attendance data
+		const attendance = tasks?.attendance ?? data.attendance;
+		if (attendance && typeof attendance === 'object') {
 			attendanceCount = await normalizeAttendance(
 				locals.user.id,
 				order.id,
-				data.attendance as Record<string, unknown>
+				attendance as Record<string, unknown>
 			);
 		}
 
 		return json({
-			status: 'done',
-			attendanceRecords: attendanceCount,
-			raw
+			status: 'complete',
+			attendanceRecords: attendanceCount
 		});
 	} catch (e) {
 		const msg = e instanceof Error ? e.message : 'Download failed';
 		await db
 			.update(scrapeOrders)
-			.set({ status: 'error', error: msg })
+			.set({ status: 'failed', error: msg })
 			.where(eq(scrapeOrders.id, order.id));
 		error(500, msg);
 	}

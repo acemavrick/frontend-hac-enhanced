@@ -9,7 +9,7 @@
 	let { orders }: { orders: Order[] } = $props();
 
 	// only completed orders can be compared
-	const completedOrders = $derived(orders.filter((o) => o.status === 'done'));
+	const completedOrders = $derived(orders.filter((o) => o.status === 'complete' || o.status === 'partial'));
 
 	let orderA = $state('');
 	let orderB = $state('');

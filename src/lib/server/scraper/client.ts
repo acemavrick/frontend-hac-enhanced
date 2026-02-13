@@ -10,10 +10,25 @@ export type ScraperOrderResponse = {
 	uid: string;
 };
 
+// mirrors the scraper's OrderStatus enum
+const TERMINAL_STATUSES = new Set(['complete', 'partial', 'failed', 'failed_auth', 'timed_out', 'canceled']);
+const SUCCESS_STATUSES = new Set(['complete', 'partial']);
+
 export type ScraperStatus = {
-	status: 'processing' | 'done' | 'error';
-	httpCode: number;
+	uid: string;
+	status: string;
+	progress: number;
+	error: string | null;
+	subtasks: Record<string, { type: string; status: string; progress: number; error: string | null }>;
 };
+
+export function isTerminal(status: string): boolean {
+	return TERMINAL_STATUSES.has(status);
+}
+
+export function isSuccess(status: string): boolean {
+	return SUCCESS_STATUSES.has(status);
+}
 
 // submit a scrape order to the backend API
 export async function submitOrder(
@@ -35,15 +50,15 @@ export async function submitOrder(
 	return res.json();
 }
 
-// poll scraper for order status
+// poll scraper for order status — returns the full status payload
 export async function getStatus(uid: string): Promise<ScraperStatus> {
 	const res = await fetch(`${baseUrl()}/order/status?uid=${encodeURIComponent(uid)}`);
 
-	if (res.status === 200) return { status: 'done', httpCode: 200 };
-	if (res.status === 202) return { status: 'processing', httpCode: 202 };
 	if (res.status === 404) throw new Error('Order not found on scraper');
+	if (!res.ok) throw new Error(`Scraper status failed (${res.status})`);
 
-	return { status: 'error', httpCode: res.status };
+	// the scraper always returns 200 with a JSON body containing the real status
+	return res.json();
 }
 
 // download completed result from scraper

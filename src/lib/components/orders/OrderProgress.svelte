@@ -1,15 +1,24 @@
 <script lang="ts">
-	import { goto, invalidateAll } from '$app/navigation';
+	import { invalidateAll } from '$app/navigation';
 
 	let { orderId, initialProgress = 0 }: { orderId: string; initialProgress?: number } = $props();
 
 	let progress = $state(initialProgress);
-	let status = $state<'processing' | 'done' | 'error'>('processing');
+	let status = $state('processing');
 	let errorMsg = $state('');
+	let downloadError = $state('');
+
+	// terminal failure states from the scraper
+	const FAILED_STATUSES = new Set(['failed', 'failed_auth', 'timed_out', 'canceled']);
+	const SUCCESS_STATUSES = new Set(['complete', 'partial']);
+
+	function isActive(s: string): boolean {
+		return !FAILED_STATUSES.has(s) && !SUCCESS_STATUSES.has(s);
+	}
 
 	// poll for status updates
 	$effect(() => {
-		if (status !== 'processing') return;
+		if (!isActive(status)) return;
 
 		const interval = setInterval(async () => {
 			try {
@@ -19,14 +28,22 @@
 				progress = data.progress ?? progress;
 				status = data.status;
 
-				if (data.status === 'done') {
+				if (SUCCESS_STATUSES.has(data.status)) {
 					clearInterval(interval);
-					// trigger download + normalization
-					await fetch(`/api/scrape/${orderId}/download`);
+					// task succeeded — download and normalize
+					try {
+						const dl = await fetch(`/api/scrape/${orderId}/download`);
+						if (!dl.ok) {
+							const err = await dl.json().catch(() => ({ message: 'Download failed' }));
+							downloadError = err.message ?? 'Download failed';
+						}
+					} catch {
+						downloadError = 'Failed to download results';
+					}
 					await invalidateAll();
-				} else if (data.status === 'error') {
+				} else if (FAILED_STATUSES.has(data.status)) {
 					clearInterval(interval);
-					errorMsg = data.error ?? 'Scrape failed';
+					errorMsg = data.error ?? `Scrape ${data.status.replace('_', ' ')}`;
 				}
 			} catch {
 				// network error — keep polling
@@ -35,13 +52,23 @@
 
 		return () => clearInterval(interval);
 	});
+
+	// human-readable status label
+	const statusLabel: Record<string, string> = {
+		created: 'Starting...',
+		queued: 'Queued...',
+		authenticating: 'Logging in to HAC...',
+		authenticated: 'Authenticated',
+		scraping: 'Scraping data...',
+		processing: 'Processing...'
+	};
 </script>
 
 <div>
-	{#if status === 'processing'}
+	{#if isActive(status)}
 		<div class="space-y-2">
 			<div class="flex items-center justify-between text-sm">
-				<span class="text-gray-600">Processing...</span>
+				<span class="text-gray-600">{statusLabel[status] ?? 'Processing...'}</span>
 				<span class="font-medium text-brand-600">{Math.round(progress * 100)}%</span>
 			</div>
 			<div class="h-2 overflow-hidden rounded-full bg-gray-100">
@@ -51,9 +78,16 @@
 				></div>
 			</div>
 		</div>
-	{:else if status === 'done'}
-		<div class="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
-			Scrape complete — data has been saved
+	{:else if SUCCESS_STATUSES.has(status)}
+		<div class="space-y-2">
+			<div class="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
+				Scrape complete — data has been saved
+			</div>
+			{#if downloadError}
+				<div class="rounded-lg bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
+					Warning: {downloadError}
+				</div>
+			{/if}
 		</div>
 	{:else}
 		<div class="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
