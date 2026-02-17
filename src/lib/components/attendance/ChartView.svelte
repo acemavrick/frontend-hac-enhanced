@@ -1,30 +1,56 @@
 <script lang="ts">
-	type MonthlyStats = {
+	import { CATEGORY_META, CATEGORY_IDS, type CategoryId } from '$lib/categories';
+	import { groupByDay } from '$lib/attendance';
+	import type { NormalizedRecord } from '$lib/types';
+
+	type MonthBucket = {
 		month: number;
 		year: number;
 		present: number;
 		absent: number;
 		tardy: number;
+		excused: number;
 		other: number;
 		total: number;
 	};
 
-	let { stats }: { stats: MonthlyStats[] } = $props();
+	let { records, colors }: {
+		records: NormalizedRecord[];
+		colors: Record<CategoryId, string>;
+	} = $props();
 
 	const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-	// compute max value for scaling
+	// non-present categories shown in the stacked bar chart
+	const BAR_CATS: CategoryId[] = ['absent', 'tardy', 'excused', 'other'];
+
+	// group into days first, then aggregate by month
+	const stats = $derived.by(() => {
+		const days = groupByDay(records);
+		const byMonth = new Map<string, MonthBucket>();
+		for (const d of days) {
+			const [y, m] = d.date.slice(0, 7).split('-').map(Number);
+			const key = `${y}-${m}`;
+			if (!byMonth.has(key)) {
+				byMonth.set(key, { year: y, month: m, present: 0, absent: 0, tardy: 0, excused: 0, other: 0, total: 0 });
+			}
+			const entry = byMonth.get(key)!;
+			entry.total += 1;
+			entry[d.category] += 1;
+		}
+		return [...byMonth.values()].sort((a, b) => a.year - b.year || a.month - b.month);
+	});
+
 	const maxTotal = $derived(Math.max(...stats.map((s) => s.total), 1));
 
 	function barHeight(value: number): number {
 		return (value / maxTotal) * 160;
 	}
 
-	function monthLabel(s: MonthlyStats): string {
+	function monthLabel(s: MonthBucket): string {
 		return `${monthNames[s.month - 1]} ${s.year}`;
 	}
 
-	// attendance rate per month
 	const rates = $derived(
 		stats.map((s) => ({
 			label: monthLabel(s),
@@ -36,7 +62,6 @@
 </script>
 
 <div class="space-y-8">
-	<!-- absences by month bar chart -->
 	<div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
 		<h3 class="text-sm font-semibold text-gray-700">Absences & Tardies by Month</h3>
 
@@ -46,42 +71,33 @@
 			<div class="mt-4 flex items-end gap-2 overflow-x-auto pb-2" style="height: 220px">
 				{#each stats as s (s.year + '-' + s.month)}
 					<div class="flex min-w-[48px] flex-col items-center gap-1">
-						<!-- stacked bar: absent + tardy -->
 						<div class="flex flex-col-reverse" style="height: 180px">
-							{#if s.absent > 0}
-								<div
-									class="w-8 rounded-t bg-red-400 transition-all duration-300"
-									style="height: {barHeight(s.absent)}px"
-									title="{s.absent} absent"
-								></div>
-							{/if}
-							{#if s.tardy > 0}
-								<div
-									class="w-8 bg-yellow-400 transition-all duration-300"
-									style="height: {barHeight(s.tardy)}px"
-									title="{s.tardy} tardy"
-								></div>
-							{/if}
+							{#each BAR_CATS as cat}
+								{#if s[cat] > 0}
+									<div
+										class="w-8 rounded-t transition-all duration-300"
+										style="height: {barHeight(s[cat])}px; background-color: {colors[cat]}"
+										title="{s[cat]} {CATEGORY_META[cat].label.toLowerCase()}"
+									></div>
+								{/if}
+							{/each}
 						</div>
 						<span class="text-[10px] text-gray-500">{monthNames[s.month - 1]}</span>
 					</div>
 				{/each}
 			</div>
 
-			<div class="mt-3 flex gap-4 text-xs">
-				<div class="flex items-center gap-1.5">
-					<div class="h-2.5 w-2.5 rounded bg-red-400"></div>
-					<span class="text-gray-500">Absent</span>
-				</div>
-				<div class="flex items-center gap-1.5">
-					<div class="h-2.5 w-2.5 rounded bg-yellow-400"></div>
-					<span class="text-gray-500">Tardy</span>
-				</div>
+			<div class="mt-3 flex flex-wrap gap-4 text-xs">
+				{#each BAR_CATS as cat}
+					<div class="flex items-center gap-1.5">
+						<div class="h-2.5 w-2.5 rounded" style="background-color: {colors[cat]}"></div>
+						<span class="text-gray-500">{CATEGORY_META[cat].label}</span>
+					</div>
+				{/each}
 			</div>
 		{/if}
 	</div>
 
-	<!-- attendance rate -->
 	<div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
 		<h3 class="text-sm font-semibold text-gray-700">Attendance Rate by Month</h3>
 
@@ -95,9 +111,8 @@
 						<div class="flex-1">
 							<div class="h-2 overflow-hidden rounded-full bg-gray-100">
 								<div
-									class="h-full rounded-full transition-all duration-500
-									{parseFloat(r.rate) >= 95 ? 'bg-green-500' : parseFloat(r.rate) >= 85 ? 'bg-yellow-500' : 'bg-red-500'}"
-									style="width: {r.rate}%"
+									class="h-full rounded-full transition-all duration-500"
+									style="width: {r.rate}%; background-color: {parseFloat(r.rate) >= 95 ? colors.present : parseFloat(r.rate) >= 85 ? colors.tardy : colors.absent}"
 								></div>
 							</div>
 						</div>

@@ -15,6 +15,8 @@ export const users = sqliteTable('users', {
 	hacUsername: text('hac_username'),
 	hacPasswordEncrypted: text('hac_password_encrypted'),
 	hacPasswordIv: text('hac_password_iv'),
+	categoryMap: text('category_map'), // JSON: { "hac code": "category id" }
+	categoryColors: text('category_colors'), // JSON: { "present": "#22c55e", ... }
 	createdAt: timestamp('created_at').notNull().$defaultFn(() => new Date()),
 	updatedAt: timestamp('updated_at').notNull().$defaultFn(() => new Date())
 });

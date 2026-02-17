@@ -1,5 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import { groupByDay, daySummary } from '$lib/attendance';
+	import { categoryStyles } from '$lib/categories';
 	import DateRangeFilter from '$lib/components/filters/DateRangeFilter.svelte';
 	import CalendarView from '$lib/components/attendance/CalendarView.svelte';
 	import ListView from '$lib/components/attendance/ListView.svelte';
@@ -16,16 +18,16 @@
 		{ id: 'charts', label: 'Charts' }
 	];
 
-	// summary stats from current filter
-	const summary = $derived(() => {
-		const r = data.records;
-		return {
-			total: r.length,
-			present: r.filter((x) => x.category === 'present').length,
-			absent: r.filter((x) => x.category === 'absent').length,
-			tardy: r.filter((x) => x.category === 'tardy').length
-		};
-	});
+	// records are already normalized by the loader
+	const days = $derived(groupByDay(data.records));
+	const summary = $derived(daySummary(days));
+	const colors = $derived(data.categoryColors);
+
+	// inline styles for the summary cards
+	const presentStyle = $derived(categoryStyles(colors.present));
+	const absentStyle = $derived(categoryStyles(colors.absent));
+	const tardyStyle = $derived(categoryStyles(colors.tardy));
+	const excusedStyle = $derived(categoryStyles(colors.excused));
 </script>
 
 <svelte:head><title>Attendance - HAC Enhanced</title></svelte:head>
@@ -36,26 +38,29 @@
 		<p class="mt-1 text-sm text-gray-500">View and analyze your attendance records</p>
 	</div>
 
-	<!-- filter bar -->
 	<DateRangeFilter />
 
 	<!-- summary cards -->
-	<div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+	<div class="grid grid-cols-2 gap-4 sm:grid-cols-5">
 		<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
 			<p class="text-xs font-medium uppercase tracking-wide text-gray-500">Total Days</p>
-			<p class="mt-1 text-2xl font-bold text-gray-900">{summary().total}</p>
+			<p class="mt-1 text-2xl font-bold text-gray-900">{summary.total}</p>
 		</div>
-		<div class="rounded-xl border border-green-100 bg-green-50 p-4 shadow-sm">
-			<p class="text-xs font-medium uppercase tracking-wide text-green-600">Present</p>
-			<p class="mt-1 text-2xl font-bold text-green-700">{summary().present}</p>
+		<div class="rounded-xl p-4 shadow-sm" style="background-color: {presentStyle.bg}; border: 1px solid {presentStyle.border}">
+			<p class="text-xs font-medium uppercase tracking-wide" style="color: {presentStyle.text}">Present</p>
+			<p class="mt-1 text-2xl font-bold" style="color: {presentStyle.text}">{summary.present}</p>
 		</div>
-		<div class="rounded-xl border border-red-100 bg-red-50 p-4 shadow-sm">
-			<p class="text-xs font-medium uppercase tracking-wide text-red-600">Absent</p>
-			<p class="mt-1 text-2xl font-bold text-red-700">{summary().absent}</p>
+		<div class="rounded-xl p-4 shadow-sm" style="background-color: {absentStyle.bg}; border: 1px solid {absentStyle.border}">
+			<p class="text-xs font-medium uppercase tracking-wide" style="color: {absentStyle.text}">Absent</p>
+			<p class="mt-1 text-2xl font-bold" style="color: {absentStyle.text}">{summary.absent}</p>
 		</div>
-		<div class="rounded-xl border border-yellow-100 bg-yellow-50 p-4 shadow-sm">
-			<p class="text-xs font-medium uppercase tracking-wide text-yellow-600">Tardy</p>
-			<p class="mt-1 text-2xl font-bold text-yellow-700">{summary().tardy}</p>
+		<div class="rounded-xl p-4 shadow-sm" style="background-color: {tardyStyle.bg}; border: 1px solid {tardyStyle.border}">
+			<p class="text-xs font-medium uppercase tracking-wide" style="color: {tardyStyle.text}">Tardy</p>
+			<p class="mt-1 text-2xl font-bold" style="color: {tardyStyle.text}">{summary.tardy}</p>
+		</div>
+		<div class="rounded-xl p-4 shadow-sm" style="background-color: {excusedStyle.bg}; border: 1px solid {excusedStyle.border}">
+			<p class="text-xs font-medium uppercase tracking-wide" style="color: {excusedStyle.text}">Excused</p>
+			<p class="mt-1 text-2xl font-bold" style="color: {excusedStyle.text}">{summary.excused}</p>
 		</div>
 	</div>
 
@@ -92,10 +97,10 @@
 			</a>
 		</div>
 	{:else if activeTab === 'calendar'}
-		<CalendarView records={data.records} />
+		<CalendarView records={data.records} {colors} />
 	{:else if activeTab === 'list'}
-		<ListView records={data.records} />
+		<ListView records={data.records} {colors} />
 	{:else}
-		<ChartView stats={data.stats} />
+		<ChartView records={data.records} {colors} />
 	{/if}
 </div>
