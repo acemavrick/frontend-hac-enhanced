@@ -1,25 +1,26 @@
 // shared types used across client and server
 
-export type AttendanceCategory = 'present' | 'absent' | 'tardy' | 'other';
+import type { CategoryId } from './categories';
 
 export type AttendanceRecord = {
 	id: string;
 	date: string;
 	rawStatus: string;
-	category: AttendanceCategory;
+	category: string; // DB-stored default, not authoritative
 	period: string | null;
 	time: string | null;
 	orderId: string;
 };
 
-export type MonthlyStats = {
-	month: number;
-	year: number;
-	present: number;
-	absent: number;
-	tardy: number;
-	other: number;
-	total: number;
+// record with category resolved via user's map — produced by normalizeRecords()
+export type NormalizedRecord = {
+	id: string;
+	date: string;
+	rawStatus: string;
+	category: CategoryId;
+	period: string | null;
+	time: string | null;
+	orderId: string;
 };
 
 export type OrderSummary = {
