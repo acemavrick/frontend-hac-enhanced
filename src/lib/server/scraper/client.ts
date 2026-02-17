@@ -61,8 +61,14 @@ export async function getStatus(uid: string): Promise<ScraperStatus> {
 	return res.json();
 }
 
-// download completed result from scraper
-export async function downloadResult(hacUsername: string, uid: string): Promise<unknown> {
+// download + decrypt completed result from scraper
+export async function downloadResult(
+	hacUsername: string,
+	hacPassword: string,
+	uid: string
+): Promise<unknown> {
+	const { decryptScraperOutput } = await import('./decrypt');
+
 	const res = await fetch(
 		`${baseUrl()}/download?uname=${encodeURIComponent(hacUsername)}&uid=${encodeURIComponent(uid)}`
 	);
@@ -71,5 +77,7 @@ export async function downloadResult(hacUsername: string, uid: string): Promise<
 		throw new Error(`Scraper download failed (${res.status})`);
 	}
 
-	return res.json();
+	const encrypted = Buffer.from(await res.arrayBuffer());
+	const decrypted = decryptScraperOutput(hacPassword, encrypted);
+	return JSON.parse(decrypted.toString('utf-8'));
 }

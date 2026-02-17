@@ -28,10 +28,14 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 	}
 
 	const [user] = await db.select().from(users).where(eq(users.id, locals.user.id)).limit(1);
-	if (!user?.hacUsername) error(400, 'HAC username not set');
+	if (!user?.hacUsername || !user?.hacPasswordEncrypted || !user?.hacPasswordIv) {
+		error(400, 'HAC credentials not set');
+	}
 
 	try {
-		const raw = await downloadResult(user.hacUsername, order.scraperUid);
+		const { decrypt } = await import('$lib/server/auth/crypto');
+		const hacPassword = decrypt(user.hacPasswordEncrypted, user.hacPasswordIv);
+		const raw = await downloadResult(user.hacUsername, hacPassword, order.scraperUid);
 
 		// wrap everything in a transaction — if normalization or update fails,
 		// order stays 'processing' and can be retried
