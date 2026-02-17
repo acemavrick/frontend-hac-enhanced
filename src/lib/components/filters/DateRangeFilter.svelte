@@ -4,6 +4,7 @@
 
 	let startDate = $state(page.url.searchParams.get('start') ?? '');
 	let endDate = $state(page.url.searchParams.get('end') ?? '');
+	let period = $state(page.url.searchParams.get('period') ?? '');
 
 	type Preset = { label: string; start: string; end: string };
 
@@ -11,9 +12,16 @@
 		return d.toISOString().split('T')[0];
 	}
 
+	// school year starts in August — figure out which year that is
+	function schoolYearStart(): number {
+		const now = new Date();
+		return now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1;
+	}
+
 	const presets: Preset[] = (() => {
 		const now = new Date();
 		const today = isoDate(now);
+		const syStart = schoolYearStart();
 
 		const weekAgo = new Date(now);
 		weekAgo.setDate(weekAgo.getDate() - 7);
@@ -21,22 +29,21 @@
 		const monthAgo = new Date(now);
 		monthAgo.setMonth(monthAgo.getMonth() - 1);
 
-		// rough semester: Aug-Dec or Jan-May
-		const semStart = now.getMonth() >= 7
-			? new Date(now.getFullYear(), 7, 1)
-			: new Date(now.getFullYear(), 0, 1);
-
-		const yearAgo = new Date(now);
-		yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+		const sem1Start = new Date(syStart, 7, 1);
+		const sem1End = new Date(syStart, 11, 31);
+		const sem2Start = new Date(syStart + 1, 0, 1);
+		const sem2End = new Date(syStart + 1, 4, 31);
 
 		return [
 			{ label: 'Week', start: isoDate(weekAgo), end: today },
 			{ label: 'Month', start: isoDate(monthAgo), end: today },
-			{ label: 'Semester', start: isoDate(semStart), end: today },
-			{ label: 'Year', start: isoDate(yearAgo), end: today },
+			{ label: 'Sem 1', start: isoDate(sem1Start), end: isoDate(sem1End) },
+			{ label: 'Sem 2', start: isoDate(sem2Start), end: isoDate(sem2End) },
 			{ label: 'All', start: '', end: '' }
 		];
 	})();
+
+	const periods = ['1', '2', '3', '4', '5', '6', '7'];
 
 	function applyFilter(start: string, end: string) {
 		startDate = start;
@@ -50,6 +57,8 @@
 		else params.delete('start');
 		if (endDate) params.set('end', endDate);
 		else params.delete('end');
+		if (period) params.set('period', period);
+		else params.delete('period');
 		goto(`?${params.toString()}`, { replaceState: true, keepFocus: true });
 	}
 </script>
@@ -81,4 +90,15 @@
 			class="rounded-md border-gray-300 px-2 py-1 text-xs shadow-sm focus:border-brand-500 focus:ring-brand-500"
 		/>
 	</div>
+
+	<select
+		bind:value={period}
+		onchange={updateUrl}
+		class="rounded-lg border-gray-300 px-2 py-1.5 text-xs shadow-sm focus:border-brand-500 focus:ring-brand-500"
+	>
+		<option value="">All Periods</option>
+		{#each periods as p}
+			<option value={p}>Period {p}</option>
+		{/each}
+	</select>
 </div>

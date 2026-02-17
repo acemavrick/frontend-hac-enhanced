@@ -77,5 +77,14 @@
 				</div>
 			{/if}
 		</dl>
+
+		{#if o.rawResponse}
+			<details class="mt-6">
+				<summary class="cursor-pointer text-sm font-medium text-gray-500 hover:text-gray-700">
+					Raw scraper response
+				</summary>
+				<pre class="mt-2 max-h-96 overflow-auto rounded-lg bg-gray-50 p-4 text-xs text-gray-700">{JSON.stringify(JSON.parse(o.rawResponse), null, 2)}</pre>
+			</details>
+		{/if}
 	</div>
 </div>

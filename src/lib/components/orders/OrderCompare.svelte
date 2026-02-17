@@ -1,9 +1,9 @@
 <script lang="ts">
 	type Order = { id: string; tasks: string[]; status: string; createdAt: number };
 	type DiffResult = {
-		added: Array<{ date: string; category: string }>;
-		removed: Array<{ date: string; category: string }>;
-		changed: Array<{ date: string; before: string; after: string }>;
+		added: Array<{ date: string; category: string; period: string | null }>;
+		removed: Array<{ date: string; category: string; period: string | null }>;
+		changed: Array<{ date: string; period: string | null; before: string; after: string }>;
 	};
 
 	let { orders }: { orders: Order[] } = $props();
@@ -90,6 +90,7 @@
 								<div class="flex items-center gap-2 text-sm">
 									<span class="h-2 w-2 rounded-full bg-green-400"></span>
 									<span class="text-gray-700">{item.date}</span>
+									{#if item.period}<span class="text-xs text-gray-400">P{item.period}</span>{/if}
 									<span class="rounded bg-green-100 px-1.5 py-0.5 text-xs text-green-700">{item.category}</span>
 								</div>
 							{/each}
@@ -105,6 +106,7 @@
 								<div class="flex items-center gap-2 text-sm">
 									<span class="h-2 w-2 rounded-full bg-red-400"></span>
 									<span class="text-gray-700">{item.date}</span>
+									{#if item.period}<span class="text-xs text-gray-400">P{item.period}</span>{/if}
 									<span class="rounded bg-red-100 px-1.5 py-0.5 text-xs text-red-700">{item.category}</span>
 								</div>
 							{/each}
@@ -120,6 +122,7 @@
 								<div class="flex items-center gap-2 text-sm">
 									<span class="h-2 w-2 rounded-full bg-yellow-400"></span>
 									<span class="text-gray-700">{item.date}</span>
+									{#if item.period}<span class="text-xs text-gray-400">P{item.period}</span>{/if}
 									<span class="text-gray-400">{item.before}</span>
 									<svg class="h-3 w-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
 										<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />

@@ -31,7 +31,8 @@ export const load: PageServerLoad = async ({ parent, params }) => {
 			error: order.error,
 			createdAt: order.createdAt?.getTime() ?? 0,
 			completedAt: order.completedAt?.getTime() ?? null,
-			attendanceCount: total
+			attendanceCount: total,
+			rawResponse: order.rawResponse
 		}
 	};
 };
