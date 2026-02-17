@@ -17,8 +17,8 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 
 	if (!order) error(404, 'Order not found');
 
-	// if already terminal locally, return cached status
-	if (order.status === 'complete' || order.status === 'partial' || order.status === 'failed' || order.status === 'failed_auth' || order.status === 'timed_out') {
+	// already terminal locally — return cached status
+	if (order.status === 'complete' || order.status === 'partial' || order.status === 'failed' || order.status === 'failed_auth' || order.status === 'timed_out' || order.status === 'canceled') {
 		return json({
 			status: order.status,
 			progress: isSuccess(order.status) ? 1 : order.progress,
@@ -30,15 +30,22 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 	try {
 		const result = await getStatus(order.scraperUid);
 
-		// sync scraper status to our DB
-		if (isTerminal(result.status)) {
+		// sync scraper state to local DB — but DON'T mark success statuses
+		// locally. only the download route can transition to 'complete' (after
+		// data is actually stored), preventing the stuck-complete-no-data bug.
+		if (isSuccess(result.status)) {
+			await db.update(scrapeOrders).set({
+				progress: result.progress
+			}).where(eq(scrapeOrders.id, order.id));
+		} else if (isTerminal(result.status)) {
+			// failure statuses are safe to persist immediately
 			await db.update(scrapeOrders).set({
 				status: result.status,
 				progress: result.progress,
 				error: result.error
 			}).where(eq(scrapeOrders.id, order.id));
 		} else {
-			// just update progress for in-flight statuses
+			// in-flight — just update progress
 			await db.update(scrapeOrders).set({
 				status: result.status,
 				progress: result.progress

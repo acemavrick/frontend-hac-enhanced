@@ -1,107 +1,88 @@
 import { db } from '$lib/server/db';
 import { attendanceRecords } from '$lib/server/db/schema';
+import { resolveCategory } from '$lib/categories';
 
-type AttendanceCategory = 'present' | 'absent' | 'tardy' | 'other';
+// both the db and transaction objects expose .insert(), so we accept either
+type DbLike = { insert: typeof db.insert };
 
-type ParsedRecord = {
-	date: string;
-	rawStatus: string;
-	category: AttendanceCategory;
-	period: string | null;
-	time: string | null;
+// month name → number (1-indexed)
+const MONTH_MAP: Record<string, number> = {
+	January: 1, February: 2, March: 3, April: 4, May: 5, June: 6,
+	July: 7, August: 8, September: 9, October: 10, November: 11, December: 12
 };
-
-/**
- * parse a raw HAC attendance status string into structured data.
- *
- * !! PLACEHOLDER — fill in with real parsing logic once scraper
- * output format is finalized. the scraper returns month-keyed
- * objects with comma-delimited strings like "2,Tardy,8:45:00 AM".
- *
- * for now, does a best-effort naive classification.
- */
-function parseRawStatus(rawStatus: string): { category: AttendanceCategory; period: string | null; time: string | null } {
-	const lower = rawStatus.toLowerCase();
-
-	// try to split comma-delimited format: "period,status,time"
-	const parts = rawStatus.split(',').map((s) => s.trim());
-
-	let period: string | null = null;
-	let time: string | null = null;
-	let category: AttendanceCategory = 'other';
-
-	if (parts.length >= 2) {
-		period = parts[0] || null;
-		const statusPart = parts[1]?.toLowerCase() ?? '';
-
-		if (statusPart.includes('tardy')) category = 'tardy';
-		else if (statusPart.includes('absent')) category = 'absent';
-		else if (statusPart.includes('present')) category = 'present';
-
-		if (parts[2]) time = parts[2];
-	} else {
-		// fallback: single string classification
-		if (lower.includes('tardy')) category = 'tardy';
-		else if (lower.includes('absent')) category = 'absent';
-		else if (lower.includes('present')) category = 'present';
-	}
-
-	return { category, period, time };
-}
 
 /**
  * normalize raw scraper attendance data and insert into DB.
  *
- * expects the attendance portion of the scraper response — typically
- * an object keyed by month names, each containing day entries.
- * the exact shape depends on the scraper; adapt parseMonthData() as needed.
+ * expects: { "MonthName": { month, year, dates: { dayNum: "pd,code[,time]|pd,code[,time]|..." } } }
+ * accepts an optional transaction — uses it for inserts if provided, otherwise uses `db` directly.
  */
 export async function normalizeAttendance(
 	userId: string,
 	orderId: string,
-	rawAttendance: Record<string, unknown>
+	rawAttendance: Record<string, unknown>,
+	tx?: DbLike
 ): Promise<number> {
-	const records: ParsedRecord[] = [];
+	const rows: Array<{
+		userId: string;
+		orderId: string;
+		date: string;
+		year: number;
+		month: number;
+		day: number;
+		rawStatus: string;
+		category: string;
+		period: string | null;
+		time: string | null;
+	}> = [];
 
-	// iterate month keys (e.g. "January 2026", "February 2026")
-	for (const [, entries] of Object.entries(rawAttendance)) {
-		if (!Array.isArray(entries)) continue;
+	for (const [, monthObj] of Object.entries(rawAttendance)) {
+		if (!monthObj || typeof monthObj !== 'object') continue;
+		const m = monthObj as Record<string, unknown>;
 
-		for (const entry of entries) {
-			if (typeof entry !== 'object' || !entry) continue;
-			const e = entry as Record<string, unknown>;
+		const monthName = String(m.month ?? '');
+		const yearStr = String(m.year ?? '');
+		const dates = m.dates as Record<string, string> | undefined;
 
-			// expect { date: "2026-01-15", status: "2,Tardy,8:45:00 AM" }
-			// adapt field names based on actual scraper output
-			const date = String(e.date ?? e.Date ?? '');
-			const status = String(e.status ?? e.Status ?? e.rawStatus ?? '');
+		const monthNum = MONTH_MAP[monthName];
+		const year = parseInt(yearStr, 10);
+		if (!monthNum || !year || !dates) continue;
 
-			if (!date || !status) continue;
+		for (const [dayStr, eventsRaw] of Object.entries(dates)) {
+			const day = parseInt(dayStr, 10);
+			if (!day || !eventsRaw) continue;
 
-			const parsed = parseRawStatus(status);
-			records.push({ date, rawStatus: status, ...parsed });
+			const isoDate = `${year}-${String(monthNum).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+			// events are separated by |, each event is period,status[,time]
+			const events = eventsRaw.split('|');
+			for (const event of events) {
+				const parts = event.split(',').map((s) => s.trim());
+				if (parts.length < 2) continue;
+
+				const period = parts[0] || null;
+				const statusText = parts[1] ?? '';
+				// time is anything after the status (e.g. "8:45:00 AM")
+				const time = parts.length >= 3 ? parts.slice(2).join(',') : null;
+
+				rows.push({
+					userId,
+					orderId,
+					date: isoDate,
+					year,
+					month: monthNum,
+					day,
+					rawStatus: event,
+					category: resolveCategory(event, null),
+					period,
+					time
+				});
+			}
 		}
 	}
 
-	if (records.length === 0) return 0;
+	if (rows.length === 0) return 0;
 
-	// batch insert
-	const rows = records.map((r) => {
-		const [y, m, d] = r.date.split('-').map(Number);
-		return {
-			userId,
-			orderId,
-			date: r.date,
-			year: y,
-			month: m,
-			day: d,
-			rawStatus: r.rawStatus,
-			category: r.category,
-			period: r.period,
-			time: r.time
-		};
-	});
-
-	await db.insert(attendanceRecords).values(rows);
+	await (tx ?? db).insert(attendanceRecords).values(rows);
 	return rows.length;
 }
