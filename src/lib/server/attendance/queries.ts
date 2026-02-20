@@ -9,6 +9,7 @@ export type AttendanceFilter = {
 	endDate?: string;
 	category?: string;
 	orderId?: string;
+	orderIds?: string[]; // multi-order merge — takes precedence over orderId
 	period?: string;
 };
 
@@ -30,13 +31,19 @@ async function getLatestOrderId(userId: string): Promise<string | null> {
 
 // get filtered attendance records
 export async function getAttendance(filter: AttendanceFilter): Promise<AttendanceRecord[]> {
-	// default to latest completed order when no specific order requested
-	const orderId = filter.orderId ?? (await getLatestOrderId(filter.userId));
-	if (!orderId) return []; // no completed orders = no records
+	// figure out which order(s) to query
+	const multiOrder = filter.orderIds && filter.orderIds.length > 0;
+	const resolvedIds = multiOrder
+		? filter.orderIds!
+		: [filter.orderId ?? (await getLatestOrderId(filter.userId))].filter(Boolean) as string[];
+
+	if (resolvedIds.length === 0) return [];
 
 	const conditions = [
 		eq(attendanceRecords.userId, filter.userId),
-		eq(attendanceRecords.orderId, orderId)
+		resolvedIds.length === 1
+			? eq(attendanceRecords.orderId, resolvedIds[0])
+			: inArray(attendanceRecords.orderId, resolvedIds)
 	];
 
 	if (filter.startDate) conditions.push(gte(attendanceRecords.date, filter.startDate));
@@ -58,12 +65,66 @@ export async function getAttendance(filter: AttendanceFilter): Promise<Attendanc
 		.where(and(...conditions))
 		.orderBy(desc(attendanceRecords.date));
 
+	// when merging multiple orders, dedup by date|period — newer order wins
+	if (multiOrder && resolvedIds.length > 1) {
+		return deduplicateByNewestOrder(rows, resolvedIds);
+	}
+
 	return rows;
 }
 
 // composite key for comparison — date + period handles multiple records per day
 function compKey(r: AttendanceRecord): string {
 	return `${r.date}|${r.period ?? ''}`;
+}
+
+// for merged queries: keep the record from the newest order per date|period
+function deduplicateByNewestOrder(
+	rows: AttendanceRecord[],
+	orderIds: string[]
+): AttendanceRecord[] {
+	// rank by position in orderIds (caller should pass newest-first)
+	const rank = new Map(orderIds.map((id, i) => [id, i]));
+	const best = new Map<string, AttendanceRecord>();
+
+	for (const r of rows) {
+		const key = compKey(r);
+		const existing = best.get(key);
+		if (!existing || (rank.get(r.orderId) ?? Infinity) < (rank.get(existing.orderId) ?? Infinity)) {
+			best.set(key, r);
+		}
+	}
+
+	// preserve date-descending sort
+	return [...best.values()].sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : 0));
+}
+
+// all completed/partial orders for a user — used by the order selector
+export type CompletedOrder = {
+	id: string;
+	source: string;
+	tasks: string;
+	createdAt: Date | null;
+	completedAt: Date | null;
+};
+
+export async function getCompletedOrders(userId: string): Promise<CompletedOrder[]> {
+	return db
+		.select({
+			id: scrapeOrders.id,
+			source: scrapeOrders.source,
+			tasks: scrapeOrders.tasks,
+			createdAt: scrapeOrders.createdAt,
+			completedAt: scrapeOrders.completedAt
+		})
+		.from(scrapeOrders)
+		.where(
+			and(
+				eq(scrapeOrders.userId, userId),
+				inArray(scrapeOrders.status, ['complete', 'partial'])
+			)
+		)
+		.orderBy(desc(scrapeOrders.completedAt));
 }
 
 // compare attendance between two scrape orders
