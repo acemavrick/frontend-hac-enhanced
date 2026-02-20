@@ -9,8 +9,8 @@
 <div class="flex min-h-screen items-center justify-center px-4">
 	<div class="w-full max-w-md">
 		<div class="mb-8 text-center">
-			<h1 class="text-3xl font-bold tracking-tight text-gray-900">Reset Password</h1>
-			<p class="mt-2 text-sm text-gray-500">Use your master password to reset</p>
+			<h1 class="text-3xl font-bold tracking-tight text-text-primary">Reset Password</h1>
+			<p class="mt-2 text-sm text-text-muted">Use your master password to reset</p>
 		</div>
 
 		<form
@@ -22,16 +22,16 @@
 					await update();
 				};
 			}}
-			class="space-y-5 rounded-xl border border-gray-200 bg-white p-8 shadow-sm"
+			class="space-y-5 rounded-xl border border-border bg-surface-raised p-8 shadow-sm"
 		>
 			{#if form?.error}
-				<div class="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+				<div class="rounded-lg bg-red-900/30 px-4 py-3 text-sm text-red-400">
 					{form.error}
 				</div>
 			{/if}
 
 			<div>
-				<label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+				<label for="username" class="block text-sm font-medium text-text-secondary">Username</label>
 				<input
 					id="username"
 					name="username"
@@ -39,44 +39,44 @@
 					autocomplete="username"
 					value={form?.username ?? ''}
 					required
-					class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm transition focus:border-brand-500 focus:ring-brand-500 sm:text-sm"
+					class="mt-1 block w-full rounded-lg border-border shadow-sm transition focus:border-brand-500 focus:ring-brand-500 sm:text-sm"
 				/>
 			</div>
 
 			<div>
-				<label for="masterPassword" class="block text-sm font-medium text-gray-700">Master password</label>
+				<label for="masterPassword" class="block text-sm font-medium text-text-secondary">Master password</label>
 				<input
 					id="masterPassword"
 					name="masterPassword"
 					type="password"
 					required
-					class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm transition focus:border-brand-500 focus:ring-brand-500 sm:text-sm"
+					class="mt-1 block w-full rounded-lg border-border shadow-sm transition focus:border-brand-500 focus:ring-brand-500 sm:text-sm"
 				/>
 			</div>
 
-			<hr class="border-gray-200" />
+			<hr class="border-border" />
 
 			<div>
-				<label for="newPassword" class="block text-sm font-medium text-gray-700">New password</label>
+				<label for="newPassword" class="block text-sm font-medium text-text-secondary">New password</label>
 				<input
 					id="newPassword"
 					name="newPassword"
 					type="password"
 					autocomplete="new-password"
 					required
-					class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm transition focus:border-brand-500 focus:ring-brand-500 sm:text-sm"
+					class="mt-1 block w-full rounded-lg border-border shadow-sm transition focus:border-brand-500 focus:ring-brand-500 sm:text-sm"
 				/>
 			</div>
 
 			<div>
-				<label for="confirmPassword" class="block text-sm font-medium text-gray-700">Confirm new password</label>
+				<label for="confirmPassword" class="block text-sm font-medium text-text-secondary">Confirm new password</label>
 				<input
 					id="confirmPassword"
 					name="confirmPassword"
 					type="password"
 					autocomplete="new-password"
 					required
-					class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm transition focus:border-brand-500 focus:ring-brand-500 sm:text-sm"
+					class="mt-1 block w-full rounded-lg border-border shadow-sm transition focus:border-brand-500 focus:ring-brand-500 sm:text-sm"
 				/>
 			</div>
 
@@ -89,8 +89,8 @@
 			</button>
 		</form>
 
-		<p class="mt-4 text-center text-sm text-gray-500">
-			<a href="/login" class="font-medium text-brand-600 hover:text-brand-500">Back to sign in</a>
+		<p class="mt-4 text-center text-sm text-text-muted">
+			<a href="/login" class="font-medium text-brand-400 hover:text-brand-300">Back to sign in</a>
 		</p>
 	</div>
 </div>

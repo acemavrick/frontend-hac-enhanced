@@ -3,9 +3,10 @@
 	import { groupByDay } from '$lib/attendance';
 	import type { NormalizedRecord } from '$lib/types';
 
-	let { records, colors }: {
+	let { records, colors, notes = {} }: {
 		records: NormalizedRecord[];
 		colors: Record<CategoryId, string>;
+		notes?: Record<string, string>;
 	} = $props();
 
 	const days = $derived(groupByDay(records));
@@ -21,13 +22,13 @@
 	}
 </script>
 
-<div class="rounded-xl border border-gray-200 bg-white shadow-sm">
-	<div class="divide-y divide-gray-100">
+<div class="rounded-xl border border-border bg-surface-raised shadow-sm">
+	<div class="divide-y divide-border-subtle">
 		{#each days as day (day.date)}
 			<div class="px-5 py-3.5">
 				<!-- day header -->
 				<div class="flex items-center justify-between">
-					<div class="text-sm font-medium text-gray-900">{formatDate(day.date)}</div>
+					<div class="text-sm font-medium text-text-primary">{formatDate(day.date)}</div>
 					<span
 						class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
 						style={badgeStyle(day.category)}
@@ -38,11 +39,11 @@
 
 				<!-- period details -->
 				{#if day.records.length > 1 || day.records[0]?.period}
-					<div class="mt-2 ml-1 space-y-1 border-l-2 border-gray-100 pl-3">
+					<div class="mt-2 ml-1 space-y-1 border-l-2 border-border-subtle pl-3">
 						{#each day.records as record (record.id)}
-							<div class="flex items-center gap-3 text-xs text-gray-500">
+							<div class="flex items-center gap-3 text-xs text-text-muted">
 								{#if record.period}
-									<span class="font-medium text-gray-600">P{record.period}</span>
+									<span class="font-medium text-text-secondary">P{record.period}</span>
 								{/if}
 								<span
 									class="rounded px-1.5 py-0.5 text-xs font-medium"
@@ -56,6 +57,10 @@
 							</div>
 						{/each}
 					</div>
+				{/if}
+
+				{#if notes[day.date]}
+					<p class="mt-2 text-xs italic text-text-faint">{notes[day.date]}</p>
 				{/if}
 			</div>
 		{/each}

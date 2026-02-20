@@ -24,12 +24,12 @@
 <div class="flex min-h-screen">
 	<!-- sidebar -->
 	<aside
-		class="fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-gray-200 bg-white transition-transform duration-200 lg:static lg:translate-x-0
+		class="fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-border bg-surface-raised transition-transform duration-200 lg:static lg:translate-x-0
 		{sidebarOpen ? 'translate-x-0' : '-translate-x-full'}"
 	>
-		<div class="flex h-16 items-center gap-2 border-b border-gray-100 px-6">
-			<span class="text-lg font-bold tracking-tight text-brand-600">HAC</span>
-			<span class="text-lg font-light text-gray-400">Enhanced</span>
+		<div class="flex h-16 items-center gap-2 border-b border-border-subtle px-6">
+			<span class="text-lg font-bold tracking-tight text-brand-400">HAC</span>
+			<span class="text-lg font-light text-text-faint">Enhanced</span>
 		</div>
 
 		<nav class="flex-1 space-y-1 px-3 py-4">
@@ -38,7 +38,7 @@
 				<a
 					href={item.href}
 					class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
-					{active ? 'bg-brand-50 text-brand-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}"
+					{active ? 'bg-brand-900/40 text-brand-300' : 'text-text-secondary hover:bg-surface-overlay hover:text-text-primary'}"
 					onclick={() => (sidebarOpen = false)}
 				>
 					{#if item.icon === 'calendar'}
@@ -60,14 +60,14 @@
 			{/each}
 		</nav>
 
-		<div class="border-t border-gray-100 px-4 py-3">
+		<div class="border-t border-border-subtle px-4 py-3">
 			<div class="flex items-center gap-3">
-				<div class="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700">
+				<div class="flex h-8 w-8 items-center justify-center rounded-full bg-brand-900/40 text-sm font-semibold text-brand-300">
 					{data.user.username[0].toUpperCase()}
 				</div>
-				<div class="flex-1 truncate text-sm font-medium text-gray-700">{data.user.username}</div>
+				<div class="flex-1 truncate text-sm font-medium text-text-secondary">{data.user.username}</div>
 				<form method="POST" action="/logout">
-					<button type="submit" class="text-gray-400 transition hover:text-gray-600" title="Sign out">
+					<button type="submit" class="text-text-faint transition hover:text-text-secondary" title="Sign out">
 						<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
 						</svg>
@@ -80,14 +80,14 @@
 	<!-- main content area -->
 	<div class="flex flex-1 flex-col">
 		<!-- mobile top bar -->
-		<header class="flex h-16 items-center gap-4 border-b border-gray-200 bg-white px-4 lg:hidden">
-			<button onclick={() => (sidebarOpen = true)} class="text-gray-500 hover:text-gray-700" aria-label="Open sidebar">
+		<header class="flex h-16 items-center gap-4 border-b border-border bg-surface-raised px-4 lg:hidden">
+			<button onclick={() => (sidebarOpen = true)} class="text-text-muted hover:text-text-secondary" aria-label="Open sidebar">
 				<svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
 				</svg>
 			</button>
-			<span class="text-lg font-bold tracking-tight text-brand-600">HAC</span>
-			<span class="text-lg font-light text-gray-400">Enhanced</span>
+			<span class="text-lg font-bold tracking-tight text-brand-400">HAC</span>
+			<span class="text-lg font-light text-text-faint">Enhanced</span>
 		</header>
 
 		<main class="flex-1 overflow-y-auto p-6 lg:p-8">

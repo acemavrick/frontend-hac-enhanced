@@ -15,6 +15,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 	return {
 		orders: orders.map((o) => ({
 			id: o.id,
+			source: o.source,
 			tasks: JSON.parse(o.tasks) as string[],
 			status: o.status,
 			progress: o.progress,

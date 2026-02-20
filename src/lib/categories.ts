@@ -21,43 +21,43 @@ export const DEFAULT_CATEGORY_MAP: Record<string, CategoryId> = {
 export const CATEGORY_META: Record<CategoryId, { label: string; badge: string; calendar: string; chart: string }> = {
 	present: {
 		label: 'Present',
-		badge: 'bg-green-100 text-green-800',
-		calendar: 'bg-green-100 text-green-800 border-green-200',
+		badge: 'bg-green-900/30 text-green-400',
+		calendar: 'bg-green-900/30 text-green-400 border-green-800',
 		chart: 'bg-green-400'
 	},
 	absent: {
 		label: 'Absent',
-		badge: 'bg-red-100 text-red-800',
-		calendar: 'bg-red-100 text-red-800 border-red-200',
+		badge: 'bg-red-900/30 text-red-400',
+		calendar: 'bg-red-900/30 text-red-400 border-red-800',
 		chart: 'bg-red-400'
 	},
 	tardy: {
 		label: 'Tardy',
-		badge: 'bg-yellow-100 text-yellow-800',
-		calendar: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+		badge: 'bg-yellow-900/30 text-yellow-400',
+		calendar: 'bg-yellow-900/30 text-yellow-400 border-yellow-800',
 		chart: 'bg-yellow-400'
 	},
 	excused: {
 		label: 'Excused',
-		badge: 'bg-blue-100 text-blue-800',
-		calendar: 'bg-blue-100 text-blue-800 border-blue-200',
+		badge: 'bg-blue-900/30 text-blue-400',
+		calendar: 'bg-blue-900/30 text-blue-400 border-blue-800',
 		chart: 'bg-blue-400'
 	},
 	other: {
 		label: 'Other',
-		badge: 'bg-gray-100 text-gray-600',
-		calendar: 'bg-gray-100 text-gray-600 border-gray-200',
-		chart: 'bg-gray-400'
+		badge: 'bg-surface-overlay text-text-muted',
+		calendar: 'bg-surface-overlay text-text-muted border-border',
+		chart: 'bg-surface-overlay'
 	}
 };
 
-// default hex colors per category — user can override in settings
+// default hex colors per category — tuned for dark backgrounds
 export const DEFAULT_COLORS: Record<CategoryId, string> = {
-	present: '#22c55e',
-	absent: '#ef4444',
-	tardy: '#eab308',
-	excused: '#3b82f6',
-	other: '#6b7280'
+	present: '#34d399',
+	absent: '#f87171',
+	tardy: '#facc15',
+	excused: '#60a5fa',
+	other: '#9ca3af'
 };
 
 // derive inline CSS styles from a hex color
@@ -65,9 +65,9 @@ export function categoryStyles(hex: string): {
 	bg: string; text: string; border: string; solid: string;
 } {
 	return {
-		bg: `${hex}1a`,        // hex + ~10% opacity
+		bg: `${hex}20`,        // ~12% opacity — visible on dark
 		text: hex,
-		border: `${hex}33`,    // hex + ~20% opacity
+		border: `${hex}40`,    // ~25% opacity
 		solid: hex
 	};
 }

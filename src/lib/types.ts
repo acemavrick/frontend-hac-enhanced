@@ -25,6 +25,7 @@ export type NormalizedRecord = {
 
 export type OrderSummary = {
 	id: string;
+	source: string;
 	tasks: string[];
 	status: string;
 	progress: number;

@@ -68,10 +68,10 @@
 	{#if isActive(status)}
 		<div class="space-y-2">
 			<div class="flex items-center justify-between text-sm">
-				<span class="text-gray-600">{statusLabel[status] ?? 'Processing...'}</span>
-				<span class="font-medium text-brand-600">{Math.round(progress * 100)}%</span>
+				<span class="text-text-secondary">{statusLabel[status] ?? 'Processing...'}</span>
+				<span class="font-medium text-brand-400">{Math.round(progress * 100)}%</span>
 			</div>
-			<div class="h-2 overflow-hidden rounded-full bg-gray-100">
+			<div class="h-2 overflow-hidden rounded-full bg-surface-overlay">
 				<div
 					class="h-full rounded-full bg-brand-500 transition-all duration-700"
 					style="width: {Math.round(progress * 100)}%"
@@ -80,17 +80,17 @@
 		</div>
 	{:else if SUCCESS_STATUSES.has(status)}
 		<div class="space-y-2">
-			<div class="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
+			<div class="rounded-lg bg-green-900/30 px-4 py-3 text-sm text-green-400">
 				Scrape complete — data has been saved
 			</div>
 			{#if downloadError}
-				<div class="rounded-lg bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
+				<div class="rounded-lg bg-yellow-900/30 px-4 py-3 text-sm text-yellow-400">
 					Warning: {downloadError}
 				</div>
 			{/if}
 		</div>
 	{:else}
-		<div class="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+		<div class="rounded-lg bg-red-900/30 px-4 py-3 text-sm text-red-400">
 			{errorMsg || 'Scrape failed'}
 		</div>
 	{/if}

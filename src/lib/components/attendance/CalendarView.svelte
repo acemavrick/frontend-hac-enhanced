@@ -4,9 +4,11 @@
 	import type { NormalizedRecord } from '$lib/types';
 	import type { CategoryId } from '$lib/categories';
 
-	let { records, colors }: {
+	let { records, colors, notes = {}, onnotechange }: {
 		records: NormalizedRecord[];
 		colors: Record<CategoryId, string>;
+		notes?: Record<string, string>;
+		onnotechange?: (date: string, content: string) => void;
 	} = $props();
 
 	// group records by year-month
@@ -31,6 +33,6 @@
 
 <div class="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
 	{#each months as m (m.year + '-' + m.month)}
-		<CalendarMonth year={m.year} month={m.month} records={m.records} {colors} />
+		<CalendarMonth year={m.year} month={m.month} records={m.records} {colors} {notes} {onnotechange} />
 	{/each}
 </div>

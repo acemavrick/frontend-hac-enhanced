@@ -24,7 +24,8 @@ export const users = sqliteTable('users', {
 export const usersRelations = relations(users, ({ many }) => ({
 	sessions: many(sessions),
 	scrapeOrders: many(scrapeOrders),
-	attendanceRecords: many(attendanceRecords)
+	attendanceRecords: many(attendanceRecords),
+	attendanceNotes: many(attendanceNotes)
 }));
 
 // ------------------------------------------------------------------
@@ -56,7 +57,8 @@ export const sessionsRelations = relations(sessions, ({ one }) => ({
 export const scrapeOrders = sqliteTable('scrape_orders', {
 	id: id(),
 	userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-	scraperUid: text('scraper_uid').notNull(),
+	scraperUid: text('scraper_uid'),
+	source: text('source').notNull().default('scrape'), // 'scrape' | 'import'
 	tasks: text('tasks').notNull(), // JSON array, e.g. ["attendance"]
 	status: text('status').notNull().default('pending'),
 	progress: real('progress').notNull().default(0),
@@ -100,4 +102,22 @@ export const attendanceRecords = sqliteTable('attendance_records', {
 export const attendanceRecordsRelations = relations(attendanceRecords, ({ one }) => ({
 	user: one(users, { fields: [attendanceRecords.userId], references: [users.id] }),
 	order: one(scrapeOrders, { fields: [attendanceRecords.orderId], references: [scrapeOrders.id] })
+}));
+
+// ------------------------------------------------------------------
+// attendance notes — one note per day per user
+// ------------------------------------------------------------------
+export const attendanceNotes = sqliteTable('attendance_notes', {
+	id: id(),
+	userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+	date: text('date').notNull(),
+	content: text('content').notNull(),
+	createdAt: timestamp('created_at').notNull().$defaultFn(() => new Date()),
+	updatedAt: timestamp('updated_at').notNull().$defaultFn(() => new Date())
+}, (table) => [
+	index('notes_user_date_idx').on(table.userId, table.date)
+]);
+
+export const attendanceNotesRelations = relations(attendanceNotes, ({ one }) => ({
+	user: one(users, { fields: [attendanceNotes.userId], references: [users.id] })
 }));
