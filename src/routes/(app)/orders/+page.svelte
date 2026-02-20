@@ -18,6 +18,11 @@
 		<NewScrapeButton />
 	</div>
 
+	<!-- comparison tool — only shows if 2+ completed orders -->
+	<div class="mt-8">
+		<OrderCompare orders={data.orders} />
+	</div>
+
 	<div class="mt-6 space-y-4">
 		{#if data.orders.length === 0}
 			<div class="rounded-xl border border-dashed border-border bg-surface-raised p-12 text-center">
@@ -34,8 +39,4 @@
 		{/if}
 	</div>
 
-	<!-- comparison tool — only shows if 2+ completed orders -->
-	<div class="mt-8">
-		<OrderCompare orders={data.orders} />
-	</div>
 </div>
