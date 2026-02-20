@@ -69,7 +69,7 @@
 		<button
 			onclick={() => applyFilter(preset.start, preset.end)}
 			class="rounded-lg px-3 py-1.5 text-xs font-medium transition
-			{active ? 'bg-brand-100 text-brand-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}"
+			{active ? 'bg-brand-900/40 text-brand-300' : 'bg-surface-overlay text-text-secondary hover:bg-surface-overlay/80'}"
 		>
 			{preset.label}
 		</button>
@@ -80,21 +80,21 @@
 			type="date"
 			bind:value={startDate}
 			onchange={updateUrl}
-			class="rounded-md border-gray-300 px-2 py-1 text-xs shadow-sm focus:border-brand-500 focus:ring-brand-500"
+			class="rounded-md border-border bg-surface-raised px-2 py-1 text-xs text-text-primary shadow-sm focus:border-brand-500 focus:ring-brand-500"
 		/>
-		<span class="text-gray-400">to</span>
+		<span class="text-text-faint">to</span>
 		<input
 			type="date"
 			bind:value={endDate}
 			onchange={updateUrl}
-			class="rounded-md border-gray-300 px-2 py-1 text-xs shadow-sm focus:border-brand-500 focus:ring-brand-500"
+			class="rounded-md border-border bg-surface-raised px-2 py-1 text-xs text-text-primary shadow-sm focus:border-brand-500 focus:ring-brand-500"
 		/>
 	</div>
 
 	<select
 		bind:value={period}
 		onchange={updateUrl}
-		class="rounded-lg border-gray-300 px-2 py-1.5 text-xs shadow-sm focus:border-brand-500 focus:ring-brand-500"
+		class="rounded-lg border-border bg-surface-raised px-2 py-1.5 text-xs text-text-primary shadow-sm focus:border-brand-500 focus:ring-brand-500"
 	>
 		<option value="">All Periods</option>
 		{#each periods as p}

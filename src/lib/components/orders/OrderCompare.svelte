@@ -47,7 +47,7 @@
 		<div class="mt-4 flex flex-wrap items-end gap-3">
 			<div>
 				<label for="orderA" class="block text-xs font-medium text-text-muted">Older run</label>
-				<select id="orderA" bind:value={orderA} class="mt-1 rounded-lg border-border text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+				<select id="orderA" bind:value={orderA} class="mt-1 rounded-lg border-border bg-surface-raised text-sm text-text-primary shadow-sm focus:border-brand-500 focus:ring-brand-500">
 					<option value="">Select...</option>
 					{#each completedOrders as o (o.id)}
 						<option value={o.id}>{fmtDate(o.createdAt)} — {o.id.slice(0, 8)}</option>
@@ -56,7 +56,7 @@
 			</div>
 			<div>
 				<label for="orderB" class="block text-xs font-medium text-text-muted">Newer run</label>
-				<select id="orderB" bind:value={orderB} class="mt-1 rounded-lg border-border text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+				<select id="orderB" bind:value={orderB} class="mt-1 rounded-lg border-border bg-surface-raised text-sm text-text-primary shadow-sm focus:border-brand-500 focus:ring-brand-500">
 					<option value="">Select...</option>
 					{#each completedOrders as o (o.id)}
 						<option value={o.id}>{fmtDate(o.createdAt)} — {o.id.slice(0, 8)}</option>

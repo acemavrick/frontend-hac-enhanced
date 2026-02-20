@@ -15,16 +15,69 @@
 	--color-brand-900: oklch(0.31 0.10 250);
 	--color-brand-950: oklch(0.22 0.07 250);
 
+	/* dark-mode semantic tokens */
+	--color-surface: oklch(0.14 0.005 250);
+	--color-surface-raised: oklch(0.18 0.008 250);
+	--color-surface-overlay: oklch(0.22 0.010 250);
+	--color-border: oklch(0.28 0.010 250);
+	--color-border-subtle: oklch(0.23 0.008 250);
+	--color-text-primary: oklch(0.93 0.005 250);
+	--color-text-secondary: oklch(0.72 0.005 250);
+	--color-text-muted: oklch(0.52 0.005 250);
+	--color-text-faint: oklch(0.38 0.005 250);
+
 	--font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
-/* smooth transitions on interactive elements */
 @layer base {
+	/* tell the browser we're dark — fixes native dropdowns, scrollbars, etc */
+	html {
+		color-scheme: dark;
+	}
+
 	body {
-		@apply bg-gray-50 text-gray-900 antialiased;
+		@apply bg-surface text-text-primary antialiased;
 	}
 
 	::selection {
-		@apply bg-brand-200 text-brand-900;
+		@apply bg-brand-700 text-brand-100;
+	}
+
+	/* override @tailwindcss/forms for dark */
+	[type='text'],
+	[type='password'],
+	[type='email'],
+	[type='number'],
+	[type='url'],
+	[type='search'],
+	[type='date'],
+	[type='time'],
+	[type='datetime-local'],
+	[type='tel'],
+	[type='file'],
+	[type='range'],
+	[type='checkbox'],
+	[type='radio'],
+	[type='color'],
+	[type='month'],
+	[type='week'],
+	[type='datetime'],
+	select,
+	textarea {
+		@apply border-border bg-surface-raised text-text-primary placeholder:text-text-faint;
+	}
+
+	/* native option elements need explicit dark styling */
+	option {
+		@apply bg-surface-raised text-text-primary;
+	}
+
+	/* make native date-picker icons visible on dark bg */
+	::-webkit-calendar-picker-indicator {
+		filter: invert(0.7);
+	}
+
+	[type='color'] {
+		@apply border-border bg-surface-raised;
 	}
 }
